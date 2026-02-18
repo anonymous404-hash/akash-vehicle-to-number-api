@@ -1,6 +1,5 @@
 {
-  "name": "akash-rc-api",
+  "name": "vehicle-api",
   "version": "1.0.0",
-  "type": "module",
-  "private": true
+  "type": "module"
 }
