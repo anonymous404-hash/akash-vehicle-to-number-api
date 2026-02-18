@@ -1,0 +1,9 @@
+{
+  "name": "akash-rc-api",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@upstash/redis": "^1.28.0"
+  },
+  "private": true
+}
