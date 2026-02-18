@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/vehicle.py": {
-      "runtime": "python3.9"
-    }
-  }
-}
