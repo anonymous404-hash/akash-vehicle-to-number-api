@@ -1,0 +1,14 @@
+{
+  "AKASH_PARMA": {
+    "expiry": "2030-03-30T23:59:59Z",
+    "dailyLimit": 999999
+  },
+  "AKASH_30DAYS": {
+    "expiry": "2026-03-20T23:59:59Z",
+    "dailyLimit": 1000
+  },
+  "AKASH_FREETRIAL": {
+    "expiry": "2026-02-20T23:59:59Z",
+    "dailyLimit": 100
+  }
+}
