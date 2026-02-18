@@ -2,7 +2,7 @@
 import keysData from '../keys.json' assert { type: 'json' };
 
 export default async function handler(req, res) {
-  // Enable CORS
+  // Enable CORS for browser testing
   res.setHeader('Access-Control-Allow-Origin', '*');
 
   // 1️⃣ Get vehicle number and API key from query
