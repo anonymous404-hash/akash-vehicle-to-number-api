@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     // Purane handles ko delete karke naye handles set karna
     data.credit = "@Akash_Exploits_bot";
     data.developer = "@Akash_Exploits_bot";
-    data.owner = "Akash Exploitss";
+    data.owner = "Akash_Exploits_bot";
     data.support = "https://t.me/Akash_Exploits_bot";
     
     // Agar response mein koi aur unwanted field hai toh usey bhi yahan modify kar sakte hain
