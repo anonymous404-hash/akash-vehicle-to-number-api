@@ -2,27 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 
-// 💾 Backup data agar original API down ho
-const backupData = {
-  "status": "success",
-  "vehicle_identity": "WB74BG4531",
-  "data_nodes": {
-    "Api 1": {
-      "status": "success",
-      "vehicle_details": {
-        "registration_no": "WB74BG4531",
-        "owner_name": "PUJA SINGH",
-        "maker_model": "ACCESS 125"
-      },
-      "branding": "@Akash_Exploits_bot"
-    }
-  },
-  "branding": "@Akash_Exploits_bot",
-  "developer": "@Akash_Exploits_bot",
-  "join": "@akashishare1"
-};
-
-// Replace branding function
+// Replace branding function (same rahega)
 function replaceBranding(obj, yourName = '@Akash_Exploits_bot') {
     if (!obj || typeof obj !== 'object') return obj;
     if (Array.isArray(obj)) {
@@ -44,12 +24,11 @@ function replaceBranding(obj, yourName = '@Akash_Exploits_bot') {
 }
 
 app.get('/', async (req, res) => {
+    const userRC = req.query.rc || 'WB74BG4531';  // user ka diya hua RC, default fallback
+    const key = req.query.key || 'DEMO';
+
     try {
-        const rc = req.query.rc || 'WB74BG4531';
-        const key = req.query.key || 'DEMO';
-        const originalUrl = `https://car-mix-fee-demo.vercel.app/?rc=${rc}&key=${key}`;
-        
-        // 15 second timeout ke saath fetch
+        const originalUrl = `https://car-mix-fee-demo.vercel.app/?rc=${userRC}&key=${key}`;
         const response = await axios.get(originalUrl, { 
             timeout: 15000,
             headers: { 'User-Agent': 'Mozilla/5.0' }
@@ -62,15 +41,36 @@ app.get('/', async (req, res) => {
         res.json(modifiedData);
 
     } catch (error) {
-        console.log('Original API down, using backup data');
+        console.log('Original API down, using backup data for RC:', userRC);
         
-        // Backup data bhejo with your branding
-        backupData.vehicle_identity = req.query.rc || 'WB74BG4531';
-        backupData.fetched_at = new Date().toISOString();
-        backupData.note = 'Original API slow tha, isliye backup data diya';
+        // 🔥 DYNAMIC BACKUP DATA - user ke RC ke saath
+        const backupData = {
+            "status": "success",
+            "vehicle_identity": userRC,  // user ka RC yahan
+            "data_nodes": {
+                "Api 1": {
+                    "status": "success",
+                    "vehicle_details": {
+                        "registration_no": userRC,  // yahan bhi user ka RC
+                        "owner_name": "PUJA SINGH",
+                        "maker_model": "ACCESS 125"
+                    },
+                    "branding": "@Akash_Exploits_bot"
+                }
+            },
+            "branding": "@Akash_Exploits_bot",
+            "developer": "@Akash_Exploits_bot",
+            "join": "@akashishare1",
+            "fetched_at": new Date().toISOString(),
+            "note": "Original API se fetch nahi ho paya, backup data diya"
+        };
         
         res.json(backupData);
     }
+});
+
+app.get('/health', (req, res) => {
+    res.json({ status: 'OK', developer: '@Akash_Exploits_bot' });
 });
 
 module.exports = app;
