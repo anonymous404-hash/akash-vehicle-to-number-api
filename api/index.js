@@ -81,7 +81,7 @@ app.get('/', async (req, res) => {
         console.log(`Fetching original API for RC: ${userRC}`);
 
         const response = await axios.get(originalUrl, {
-            timeout: 1500,
+            timeout: 30000,
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
