@@ -2,10 +2,8 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 
-// ========== 🔑 KEY STORAGE ==========
-// In-memory object – प्रोडक्शन में डेटाबेस यूज़ करें
+// ========== 🔑 आपकी अपनी keys (जो यूजर्स को देंगे) ==========
 const KEYS = {
-    // आपकी माँगी हुई keys:
     "AKASH_PARMA": {
         expiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year
         owner: "PARMA"
@@ -18,23 +16,22 @@ const KEYS = {
         expiry: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day
         owner: "FREE_USER"
     }
-    // आप चाहें तो और keys डाल सकते हैं
 };
 
-// हेल्पर: की वैलिडिटी और एक्सपायरी चेक
+// ========== 🔑 Original API की key (यह छुपा कर रखें) ==========
+const ORIGINAL_API_KEY = "DEMO"; // इसे environment variable में रखना बेहतर होगा
+
+// हेल्पर फंक्शन
 function isValidKey(key) {
     const keyData = KEYS[key];
     if (!keyData) return false;
-    const now = new Date();
-    const expiry = new Date(keyData.expiry);
-    return now < expiry;
+    return new Date() < new Date(keyData.expiry);
 }
 
 function getKeyDetails(key) {
     return KEYS[key] || null;
 }
 
-// ========== 🎨 BRANDING REPLACE ==========
 function replaceBranding(obj, yourName = '@Akash_Exploits_bot') {
     if (!obj || typeof obj !== 'object') return obj;
     if (Array.isArray(obj)) {
@@ -58,17 +55,17 @@ function replaceBranding(obj, yourName = '@Akash_Exploits_bot') {
 // ========== 🚀 MAIN ENDPOINT ==========
 app.get('/', async (req, res) => {
     const userRC = req.query.rc || 'WB74BG4531';
-    const key = req.query.key;
+    const userKey = req.query.key;
 
-    // 1️⃣ KEY चेक
-    if (!key) {
+    // 1. अपनी key validate करें
+    if (!userKey) {
         return res.status(400).json({
             error: "Missing 'key' parameter",
             developer: '@Akash_Exploits_bot'
         });
     }
 
-    if (!isValidKey(key)) {
+    if (!isValidKey(userKey)) {
         return res.status(403).json({
             error: "Invalid or expired key",
             developer: '@Akash_Exploits_bot',
@@ -76,22 +73,21 @@ app.get('/', async (req, res) => {
         });
     }
 
-    const keyDetails = getKeyDetails(key);
+    const keyDetails = getKeyDetails(userKey);
 
     try {
-        // 2️⃣ ORIGINAL API कॉल
-        const originalUrl = `https://car-mix-fee-demo.vercel.app/?rc=${userRC}&key=${key}`;
-        console.log(`[${new Date().toISOString()}] Fetching: ${originalUrl}`);
+        // 2. Original API को call करें (सिर्फ DEMO key से)
+        const originalUrl = `https://car-mix-fee-demo.vercel.app/?rc=${userRC}&key=${ORIGINAL_API_KEY}`;
+        console.log(`Fetching original API for RC: ${userRC}`);
 
         const response = await axios.get(originalUrl, {
-            timeout: 3000, // 15 sec
+            timeout: 15000,
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': 'application/json, text/plain, */*'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
         });
 
-        // 3️⃣ ब्रांडिंग बदलें और key_info जोड़ें
+        // 3. ब्रांडिंग बदलें और अपनी key details जोड़ें
         let modifiedData = replaceBranding(response.data);
         modifiedData.branding = '@Akash_Exploits_bot';
         modifiedData.developer = '@Akash_Exploits_bot';
@@ -101,12 +97,13 @@ app.get('/', async (req, res) => {
             expiry: keyDetails.expiry,
             valid: true
         };
+        
         res.json(modifiedData);
 
     } catch (error) {
-        // 4️⃣ ORIGINAL API FAIL – बैकअप डेटा भेजें
-        console.error(`[${new Date().toISOString()}] Original API failed for RC: ${userRC}`, error.message);
-
+        // 4. अगर original API fail हो, तो backup data
+        console.error(`Original API failed for RC ${userRC}:`, error.message);
+        
         const backupData = {
             status: "success",
             vehicle_identity: userRC,
@@ -115,7 +112,7 @@ app.get('/', async (req, res) => {
                     status: "success",
                     vehicle_details: {
                         registration_no: userRC,
-                        owner_name: "PUJA SINGH",    // डेमो नाम
+                        owner_name: "PUJA SINGH",
                         maker_model: "ACCESS 125"
                     },
                     branding: "@Akash_Exploits_bot"
@@ -130,8 +127,7 @@ app.get('/', async (req, res) => {
                 valid: true
             },
             fetched_at: new Date().toISOString(),
-            note: "Original API se fetch nahi ho paya, backup data diya gaya hai.",
-            error_debug: error.message // (optional) डीबग के लिए
+            note: "Original API se fetch nahi ho paya, backup data diya gaya hai."
         };
         res.json(backupData);
     }
@@ -146,17 +142,13 @@ app.get('/health', (req, res) => {
     });
 });
 
-// ========== 🔐 ADMIN: GENERATE NEW KEY ==========
-// इस एंडपॉइंट को प्रोडक्शन में प्रोटेक्ट करें (जैसे master password)
+// ========== 🔐 GENERATE NEW KEY (Admin only) ==========
 app.get('/generate-key', (req, res) => {
     const { owner, days } = req.query;
     if (!owner || !days) {
-        return res.status(400).json({
-            error: "Missing parameters. Use: /generate-key?owner=NAME&days=NUMBER"
-        });
+        return res.status(400).json({ error: "Missing owner or days" });
     }
 
-    // नई key बनाएँ (random string)
     const newKey = 'KEY_' + Math.random().toString(36).substring(2, 10).toUpperCase();
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + parseInt(days));
@@ -170,19 +162,16 @@ app.get('/generate-key', (req, res) => {
         status: 'success',
         key: newKey,
         expiry: expiryDate.toISOString(),
-        owner: owner,
-        note: 'Iss key ko ab main endpoint mein use kar sakte hain.'
+        owner: owner
     });
 });
 
-// ========== 🌐 SERVER START ==========
+// ========== 🚀 START SERVER ==========
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`Predefined keys:`);
-    console.log(`- AKASH_PARMA (expires: ${KEYS.AKASH_PARMA.expiry})`);
-    console.log(`- AKASH_PAID30DAYS (expires: ${KEYS.AKASH_PAID30DAYS.expiry})`);
-    console.log(`- AKASH_FREE (expires: ${KEYS.AKASH_FREE.expiry})`);
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Original API Key: ${ORIGINAL_API_KEY}`);
+    console.log(`Available keys: ${Object.keys(KEYS).join(', ')}`);
 });
 
-module.exports = app; // Vercel के लिए export
+module.exports = app;
