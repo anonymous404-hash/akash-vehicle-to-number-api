@@ -84,7 +84,7 @@ app.get('/', async (req, res) => {
         console.log(`[${new Date().toISOString()}] Fetching: ${originalUrl}`);
 
         const response = await axios.get(originalUrl, {
-            timeout: 15000, // 15 sec
+            timeout: 3000, // 15 sec
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 'Accept': 'application/json, text/plain, */*'
